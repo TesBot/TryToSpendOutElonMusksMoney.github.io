@@ -70,8 +70,9 @@ h1, h2, h3, h4 {
 
 /* ===== MODE SELECT SCREEN - Grand Entrance ===== */
 .mode-screen {
-  position: fixed;
-  inset: 0;
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -81,7 +82,12 @@ h1, h2, h3, h4 {
     radial-gradient(ellipse at 80% 100%, rgba(122,0,0,0.04) 0%, transparent 40%),
     var(--bg);
   z-index: 1000;
-  overflow: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 20px 16px;
+  padding-top: max(20px, env(safe-area-inset-top));
+  padding-bottom: max(20px, env(safe-area-inset-bottom));
+  box-sizing: border-box;
 }
 
 .mode-bg-pattern {

@@ -290,8 +290,18 @@ function doAction(action) {
   const costMultiplier = getCostMultiplier(action.id);
   const cost = Math.floor(action.baseCost * costMultiplier);
 
+  // 钱不够支付？直接扣到负资产并结束游戏
   if (gameState.money < cost) {
-    addLog(`⚠️ 资金不足，无法执行 ${action.name}`, 0, 'bad');
+    const finalMoney = gameState.money - cost;
+    gameState.money = finalMoney;
+    gameState.operations++;
+    gameState.moneySpentCount[action.id] = (gameState.moneySpentCount[action.id] || 0) + 1;
+    addLog(`💸 ${action.name} 花费${formatMoney(cost)}，余额不足触发破产！`, finalMoney, 'bad');
+
+    // 立即触发游戏结束
+    setTimeout(() => {
+      endGame();
+    }, 100);
     return;
   }
 
@@ -360,25 +370,25 @@ function handleGambleResult(action, cost) {
     if (roll < 0.38) {
       const win = Math.floor(cost * 1.75);
       gameState.money += win;
-      addLog(`🎰 幸运获胜！赢得 ${formatMoney(win - cost)}`, win - cost, 'good');
+      addLog(`🎰 赌场大胜！本金${formatMoney(cost)} → 赢${formatMoney(win - cost)}（含本金）`, win - cost, 'good');
     } else {
-      addLog(`🎰 庄家通吃，亏损 ${formatMoney(cost)}`, -cost, 'bad');
+      addLog(`🎰 赌场落败，亏损本金${formatMoney(cost)}`, -cost, 'bad');
     }
   } else if (action.id === 'match') {
     if (roll < 0.33) {
       const win = cost * 2;
       gameState.money += win;
-      addLog(`🏆 赛事爆冷！赢得 ${formatMoney(cost)}`, cost, 'good');
+      addLog(`🏆 赛事爆冷！本金${formatMoney(cost)} → 赢${formatMoney(cost)}（含本金）`, cost, 'good');
     } else {
-      addLog(`🏆 赛事落败，亏损 ${formatMoney(cost)}`, -cost, 'bad');
+      addLog(`🏆 赛事落败，亏损本金${formatMoney(cost)}`, -cost, 'bad');
     }
   } else if (action.gamble) {
     if (roll < action.winRate) {
       const win = Math.floor(cost * action.winMultiplier);
       gameState.money += win;
-      addLog(`🎁 盲盒暴击！赢得 ${formatMoney(win - cost)}`, win - cost, 'good');
+      addLog(`🎁 盲盒暴击！本金${formatMoney(cost)} → 赢得${formatMoney(win - cost)}（含本金）`, win - cost, 'good');
     } else {
-      addLog(`📦 盲盒未中，亏损 ${formatMoney(cost)}`, -cost, 'bad');
+      addLog(`📦 盲盒未中，亏损本金${formatMoney(cost)}`, -cost, 'bad');
     }
   }
 }
@@ -387,18 +397,23 @@ function handleBigInvestResult(action) {
   const roll = Math.random();
 
   if (roll < 0.7) {
-    addLog(`💸 风投项目烂尾，亏损全部投资`, -action.baseCost, 'bad');
+    // 70% - 亏损
+    const loss = action.baseCost;
+    gameState.money -= loss;
+    addLog(`💸 风投项目烂尾！亏损${formatMoney(loss)}，余额${formatMoney(gameState.money)}`, -loss, 'bad');
   } else if (roll < 0.9) {
-    addLog(`📊 风投项目保本，勉强维持`, 0, 'neutral');
-    gameState.money += action.baseCost;
+    // 20% - 保本
+    addLog(`📊 风投项目保本，余额${formatMoney(gameState.money)}`, 0, 'neutral');
+    // 保本不退款，本金已扣
   } else {
+    // 10% - 翻倍
     const profit = action.baseCost;
     gameState.money += profit * 2;
-    addLog(`🚀 风投项目翻倍！盈利 ${formatMoney(profit)}`, profit, 'good');
-    // Tax
+    addLog(`🚀 风投大成功！本金${formatMoney(action.baseCost)} → 盈利${formatMoney(profit)}（含本金），余额${formatMoney(gameState.money)}`, profit, 'good');
+    // 盈利税
     const tax = Math.floor(profit * 0.5);
     gameState.money -= tax;
-    addLog(`🏛️ 盈利税扣除 ${formatMoney(tax)}`, -tax, 'bad');
+    addLog(`🏛️ 盈利税${formatMoney(tax)}，余额${formatMoney(gameState.money)}`, -tax, 'bad');
   }
 }
 
@@ -409,10 +424,11 @@ function handleInvestResult(action) {
 
   if (diff > 0) {
     const tax = Math.floor(diff * 0.5);
-    gameState.money += result - tax;
-    addLog(`📈 ${action.name} 盈利 ${formatMoney(diff - tax)} (税后)`, diff - tax, 'good');
+    const netProfit = result - tax;
+    gameState.money += netProfit;
+    addLog(`📈 ${action.name} 盈利${formatMoney(diff)}（税后${formatMoney(netProfit)}），余额${formatMoney(gameState.money)}`, netProfit, 'good');
   } else {
-    addLog(`📉 ${action.name} 亏损 ${formatMoney(Math.abs(diff))}`, diff, 'bad');
+    addLog(`📉 ${action.name} 亏损${formatMoney(Math.abs(diff))}，余额${formatMoney(gameState.money)}`, diff, 'bad');
   }
 
   updateDisplay();
