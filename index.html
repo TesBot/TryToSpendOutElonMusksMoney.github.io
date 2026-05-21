@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>七日散尽万亿 - 终极烧钱模拟器</title>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<!-- Styles -->
+<link rel="stylesheet" href="styles/main.css">
+
+<!-- Favicon -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
+</head>
+<body>
+
+<!-- ===== MODE SELECT SCREEN ===== -->
+<div id="modeScreen" class="mode-screen">
+  <div class="mode-bg-pattern"></div>
+  <div class="mode-content">
+    <h1 class="mode-title gold-pulse">挑战7天花光埃隆·马斯克的资产</h1>
+    <p class="mode-subtitle">终极烧钱模拟器</p>
+    <p class="mode-desc">挑战在限定时间内花光福布斯2026年3月权威数据：埃隆·马斯克身家8390亿美金</p>
+
+    <div class="mode-cards">
+      <div class="mode-card" data-mode="classic">
+        <span class="mode-card-icon">📅</span>
+        <h3 class="mode-card-name">经典七日记</h3>
+        <p class="mode-card-desc">真实计时7天，可存档读档<br>体验完整的败家之旅</p>
+      </div>
+      <div class="mode-card" data-mode="rush">
+        <span class="mode-card-icon">⚡</span>
+        <h3 class="mode-card-name">快节奏烧钱</h3>
+        <p class="mode-card-desc">点击快进加速进程<br>短时间内体验全部玩法</p>
+      </div>
+      <div class="mode-card" data-mode="endless">
+        <span class="mode-card-icon">♾️</span>
+        <h3 class="mode-card-name">无尽烧钱</h3>
+        <p class="mode-card-desc">无时间压力<br>专注操作决策的乐趣</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== RESULT SCREEN ===== -->
+<div id="resultScreen" class="result-screen">
+  <div class="result-bg-pattern"></div>
+  <div class="result-content">
+    <h1 id="resultTitle" class="result-title success"></h1>
+    <p id="resultSubtitle" class="result-subtitle"></p>
+
+    <div class="result-stats">
+      <div class="result-stat">
+        <div id="resultFinalMoney" class="result-stat-value">$0</div>
+        <div class="result-stat-label">最终余额</div>
+      </div>
+      <div class="result-stat">
+        <div id="resultDaysElapsed" class="result-stat-value">0天</div>
+        <div class="result-stat-label">消耗天数</div>
+      </div>
+      <div class="result-stat">
+        <div id="resultOperations" class="result-stat-value">0</div>
+        <div class="result-stat-label">执行操作</div>
+      </div>
+    </div>
+
+    <div class="result-buttons">
+      <button class="btn btn-primary" id="btnRestart">再来一次</button>
+      <button class="btn" id="btnBackToMode">返回选模式</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MAIN GAME ===== -->
+<div id="gameContainer" class="game-container">
+  <header class="game-header">
+    <h1 class="game-title gold-pulse">挑战7天花光埃隆·马斯克的资产</h1>
+
+    <div class="header-stats">
+      <div class="stat-block" id="timeBlock">
+        <div class="stat-label">剩余时间</div>
+        <div class="stat-value" id="timeDisplay">7天 00:00:00</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-label">当前资金</div>
+        <div class="stat-value big" id="moneyDisplay">$839,000,000,000</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-label">执行操作</div>
+        <div class="stat-value" id="opCount">0</div>
+      </div>
+    </div>
+
+    <div class="header-controls">
+      <div class="speed-control" id="speedControl">
+        <span class="speed-label">倍速</span>
+        <button class="speed-btn active" data-speed="1">1x</button>
+        <button class="speed-btn" data-speed="100">100x</button>
+        <button class="speed-btn" data-speed="1000">1000x</button>
+        <button class="speed-btn" data-speed="10000">10000x</button>
+        <button class="speed-btn" data-speed="20000">20000x</button>
+      </div>
+      <button class="btn btn-small" id="btnSave">存档</button>
+      <button class="btn btn-small" id="btnLoad">读档</button>
+      <button class="btn btn-small" id="btnReset">重置</button>
+    </div>
+  </header>
+
+  <div class="exclusive-indicator" id="exclusiveIndicator">
+    <div class="exclusive-spinner"></div>
+    <span id="exclusiveText">独占操作进行中...</span>
+  </div>
+
+  <main class="game-main">
+    <div class="sidebar-left">
+      <nav class="category-tabs" id="categoryTabs"></nav>
+      <div class="actions-panel" id="actionsPanel"></div>
+    </div>
+
+    <aside class="log-panel">
+      <div class="log-header">
+        <span class="log-title">活动日志</span>
+        <button class="btn btn-small" id="btnClearLog">清空</button>
+      </div>
+      <div class="log-entries" id="logEntries"></div>
+      <div class="progress-section">
+        <div class="progress-label">烧钱进度</div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<!-- ===== BET MODAL ===== -->
+<div id="betModal" class="modal-overlay">
+  <div class="modal-box">
+    <h2 class="modal-title" id="betModalTitle">设置投注金额</h2>
+    <input type="text" class="modal-input" id="betAmountInput" placeholder="输入金额">
+    <p class="modal-hint" id="betModalHint">可用资金: $839,000,000,000</p>
+    <div class="modal-buttons">
+      <button class="btn" id="btnCancelBet">取消</button>
+      <button class="btn btn-primary" id="btnConfirmBet">确认投注</button>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="scripts/data.js"></script>
+<script src="scripts/game.js"></script>
+</body>
+</html>
