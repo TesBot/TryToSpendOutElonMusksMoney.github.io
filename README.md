@@ -9,6 +9,8 @@
 
 ## 🎮 游戏简介
 
+<img width="2549" height="1403" alt="image" src="https://github.com/user-attachments/assets/af33d651-84d5-4ae3-b831-2c639f1f7f24" />
+
 你将获得 **8390亿美元**（埃隆·马斯克的真实身家），挑战在7天内将其全部花光！
 
 游戏包含多种烧钱方式：
@@ -97,7 +99,7 @@ HowToSpendOutMusksMoney/
 - 太空项目：$2亿-$8亿/次
 - 艺术品销毁：$1亿-$5亿/件
 
-<img width="2549" height="1403" alt="image" src="https://github.com/user-attachments/assets/af33d651-84d5-4ae3-b831-2c639f1f7f24" />
+
 
 ---
 
