@@ -15,7 +15,15 @@ let gameState = {
   logs: [],
   exclusiveOperation: null,
   moneySpentCount: {},
-  pendingBetAction: null
+  pendingBetAction: null,
+  // 被动增收系统
+  lastIncomeTick: 0,
+  teslaHourlyTime: 0,
+  spaceXHourlyTime: 0,
+  subsidiaryTime: 0,
+  todayDay: 0,
+  optionsVested: false,
+  optionsVested2: false
 };
 
 let gameLoopInterval = null;
@@ -246,6 +254,18 @@ function updateDisplay() {
     if (gameState.cooldowns[key] > 0) {
       gameState.cooldowns[key] = Math.max(0, gameState.cooldowns[key] - 50 * gameState.speed);
     }
+  }
+
+  // Passive income system - 基于实时时间差计算被动收入
+  if (gameState.lastIncomeTick === 0) {
+    gameState.lastIncomeTick = Date.now();
+  }
+  const now = Date.now();
+  const deltaRealTime = now - gameState.lastIncomeTick;
+  const deltaGameTime = deltaRealTime * gameState.speed;
+  if (deltaGameTime > 0) {
+    calculatePassiveIncome(deltaGameTime);
+    gameState.lastIncomeTick = now;
   }
 }
 
@@ -530,6 +550,8 @@ function setSpeed(speed) {
   // 先冻结当前时间，避免计时错乱
   gameState.elapsedTime = getGameTime();
   gameState.startTime = Date.now();
+  // 重置收入计时：lastIncomeTick用Date.now()记录，下次计算deltaGameTime时能正确反映时间差
+  gameState.lastIncomeTick = Date.now();
   gameState.speed = speed;
   document.querySelectorAll('.speed-btn').forEach(btn => {
     btn.classList.toggle('active', parseInt(btn.dataset.speed) === speed);
@@ -572,6 +594,86 @@ function triggerRandomEvent() {
   addLog(`📢 突发事件: ${event.name} (${event.desc})`, event.amount, event.amount > 0 ? 'good' : 'bad');
 }
 
+// ===== PASSIVE INCOME SYSTEM =====
+// 复刻马斯克真实财富模式：股权增值、企业估值、期权激励、经营收益
+// 高频收入不写日志，只在资金面板显示；大额事件才记录
+// 使用"计时器"方式而非"累积器"方式，避免速度切换时的时间遗留问题
+function calculatePassiveIncome(deltaGameTime) {
+  if (deltaGameTime <= 0) return;
+
+  // 1. 特斯拉股权秒级被动增收：$42,000/秒（不记日志）
+  gameState.money += deltaGameTime * 42;
+
+  // 2. 特斯拉小时级波动增收：每游戏小时70%概率+$50万-$200万（记日志）
+  // 使用计时器方式：记录上次触发的游戏时间，每次增加一小时游戏时间后触发
+  gameState.teslaHourlyTime += deltaGameTime;
+  const hourMs = 3600000;
+  while (gameState.teslaHourlyTime >= hourMs) {
+    gameState.teslaHourlyTime -= hourMs;
+    if (Math.random() < 0.7) {
+      const bonus = 5000000 + Math.random() * 15000000;
+      gameState.money += bonus;
+      addLog(`📈 特斯拉股价小涨 +${formatMoney(bonus)}`, bonus, 'good');
+    }
+  }
+
+  // 3. SpaceX私人股权估值上涨：每游戏小时+$12,000,000（记日志）
+  gameState.spaceXHourlyTime += deltaGameTime;
+  while (gameState.spaceXHourlyTime >= hourMs) {
+    gameState.spaceXHourlyTime -= hourMs;
+    gameState.money += 12000000;
+    addLog(`🚀 SpaceX股权估值上涨 +$12,000,000`, 12000000, 'good');
+  }
+
+  // 4. 旗下科创公司经营性收益：每5分钟+$150,000（不记日志）
+  const fiveMinMs = 300000;
+  gameState.subsidiaryTime += deltaGameTime;
+  while (gameState.subsidiaryTime >= fiveMinMs) {
+    gameState.subsidiaryTime -= fiveMinMs;
+    gameState.money += 150000;
+  }
+
+  // 5. 每日特斯拉市值公允上涨：$520,000,000（记日志）
+  const currentDay = Math.floor(getGameTime() / 86400000);
+  if (currentDay > gameState.todayDay && currentDay > 0) {
+    gameState.money += 520000000;
+    addLog(`💹 每日特斯拉市值公允上涨 +$520,000,000`, 520000000, 'good');
+    gameState.todayDay = currentDay;
+  }
+
+  // 6. 随机爆发式增收事件（难度拔高核心）
+  // 贴合现实资本市场：航天突破/特斯拉爆单/科创融资（记日志）
+  const incomeEventChance = 0.00003 * (1 + (1 - Math.min(1, gameState.money / INITIAL_MONEY)) * 3);
+  if (Math.random() < incomeEventChance) {
+    const roll = Math.random();
+    if (roll < 0.33) {
+      gameState.money += 3000000000;
+      addLog(`🚀 SpaceX火箭回收成功！资产暴涨 +${formatMoney(3000000000)}`, 3000000000, 'good');
+    } else if (roll < 0.66) {
+      gameState.money += 2500000000;
+      addLog(`🚗 特斯拉AI自动驾驶爆单！资产暴涨 +${formatMoney(2500000000)}`, 2500000000, 'good');
+    } else {
+      gameState.money += 1800000000;
+      addLog(`💻 xAI/Neuralink新一轮融资！资产暴涨 +${formatMoney(1800000000)}`, 1800000000, 'good');
+    }
+  }
+
+  // 7. 期权归属：7天内随机触发2次（复刻史诗级薪酬方案）（记日志）
+  const gameTimeHours = getGameTime() / 3600000;
+  if (!gameState.optionsVested && gameTimeHours > 24 && Math.random() < 0.002) {
+    const vest1 = 12000000000 + Math.random() * 8000000000;
+    gameState.money += vest1;
+    addLog(`🏛️ 特斯拉期权第一次归属！+${formatMoney(vest1)}`, vest1, 'good');
+    gameState.optionsVested = true;
+  }
+  if (!gameState.optionsVested2 && gameTimeHours > 120 && Math.random() < 0.002) {
+    const vest2 = 12000000000 + Math.random() * 8000000000;
+    gameState.money += vest2;
+    addLog(`🏛️ 特斯拉期权第二次归属！+${formatMoney(vest2)}`, vest2, 'good');
+    gameState.optionsVested2 = true;
+  }
+}
+
 // ===== GAME MODE MANAGEMENT =====
 function initStocks() {
   const stocks = {};
@@ -604,7 +706,15 @@ function startGame(mode) {
     logs: [],
     exclusiveOperation: null,
     moneySpentCount: {},
-    pendingBetAction: null
+    pendingBetAction: null,
+    // 被动增收系统
+    lastIncomeTick: 0,
+    teslaHourlyTime: 0,
+    spaceXHourlyTime: 0,
+    subsidiaryTime: 0,
+    todayDay: 0,
+    optionsVested: false,
+    optionsVested2: false
   };
 
   // Hide/show screens
@@ -709,6 +819,7 @@ function saveGame() {
   // 先冻结当前时间，避免存档时时间跳变
   gameState.elapsedTime = getGameTime();
   gameState.startTime = Date.now();
+  gameState.lastIncomeTick = getGameTime();
 
   const saveData = {
     ...gameState,
@@ -735,6 +846,15 @@ function loadGame() {
     const save = JSON.parse(data);
     // 恢复存档，startTime保持存档中的值以正确计算时间
     gameState = { ...save };
+
+    // 确保新增字段有默认值
+    gameState.lastIncomeTick = gameState.lastIncomeTick || Date.now();
+    gameState.teslaHourlyTime = gameState.teslaHourlyTime || 0;
+    gameState.spaceXHourlyTime = gameState.spaceXHourlyTime || 0;
+    gameState.subsidiaryTime = gameState.subsidiaryTime || 0;
+    gameState.todayDay = gameState.todayDay || 0;
+    gameState.optionsVested = gameState.optionsVested || false;
+    gameState.optionsVested2 = gameState.optionsVested2 || false;
 
     document.getElementById('modeScreen').style.display = 'none';
     document.getElementById('resultScreen').style.display = 'none';
